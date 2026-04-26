@@ -7,3 +7,7 @@ def generate_2fa(username):
         issuer_name="MSPR"
     )
     return secret, uri
+
+def verify_2fa(secret, code):
+    totp = pyotp.TOTP(secret)
+    return totp.verify(code)

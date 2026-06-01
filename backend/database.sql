@@ -1,0 +1,10 @@
+USE mspr;
+
+CREATE TABLE Users (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    MFA VARCHAR(255),
+    gendate DATE NOT NULL,
+    expired BIT DEFAULT 0
+);

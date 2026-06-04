@@ -236,6 +236,7 @@ def create_user(username: str):
         (username, encrypted_password.decode(), "", gendate, 0)
     )
     conn.commit()
+    print(f"Mot de passe généré pour {username} : {password}")
 
     return {
         "password_qr": f"http://127.0.0.1:8000/static/{password_file}"

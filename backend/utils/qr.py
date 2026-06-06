@@ -1,21 +1,12 @@
-# import qrcode
-
-# def generate_qr(data, filename):
-#     img = qrcode.make(data)
-#     img.save(filename)
-
-
 import qrcode
 import os
 
+DATA_DIR = os.getenv("DATA_DIR", "/tmp/mspr-data")
+QR_DIR = os.path.join(DATA_DIR, "qrcodes")
+os.makedirs(QR_DIR, exist_ok=True)
+
 def generate_qr(data, filename):
-    folder = "qrcodes"
-
-    # créer dossier si n'existe pas
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    path = os.path.join(folder, filename)
+    path = os.path.join(QR_DIR, filename)
 
     img = qrcode.make(data)
     img.save(path)

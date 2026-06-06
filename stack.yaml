@@ -1,0 +1,17 @@
+version: 1.0
+
+provider:
+  name: openfaas
+  gateway: http://51.210.104.236
+
+functions:
+  mspr-auth-api:
+    lang: dockerfile
+    handler: ./backend
+    image: hichemouar/mspr-auth-api:demo1
+    annotations:
+      com.openfaas.health.http.path: "/_/health"
+      com.openfaas.ready.http.path: "/_/ready"
+    environment:
+      BASE_URL: http://51.210.104.236/function/mspr-auth-api
+      DATA_DIR: /tmp/mspr-data

@@ -1,14 +1,17 @@
 import os
 from cryptography.fernet import Fernet
 
-# Fichier où la clé est sauvegardée
-KEY_FILE = os.path.join(os.path.dirname(__file__), "secret.key")
+DATA_DIR = os.getenv("DATA_DIR", "/tmp/mspr-data")
+KEY_DIR = os.path.join(DATA_DIR, "keys")
+os.makedirs(KEY_DIR, exist_ok=True)
+
+KEY_FILE = os.path.join(KEY_DIR, "secret.key")
 
 def _charger_cle():
     if os.path.exists(KEY_FILE):
         with open(KEY_FILE, "rb") as f:
             return f.read().strip()
-    # Première fois : on génère et on sauvegarde
+
     cle = Fernet.generate_key()
     with open(KEY_FILE, "wb") as f:
         f.write(cle)

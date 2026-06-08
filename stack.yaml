@@ -1,0 +1,42 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://51.210.104.236
+  network: openfaas-fn
+
+functions:
+  generate-password:
+    lang: python3-http
+    handler: ./functions/generate-password
+    image: lyndaalga/cofrap-generate-password:latest
+    environment:
+      DATABASE_URL: "postgresql://cofrap:cofrap@postgres.cofrap.svc.cluster.local:5432/cofrap"
+    secrets:
+      - encryption-key
+
+  generate-2fa:
+    lang: python3-http
+    handler: ./functions/generate-2fa
+    image: lyndaalga/cofrap-generate-2fa:latest
+    environment:
+      DATABASE_URL: "postgresql://cofrap:cofrap@postgres.cofrap.svc.cluster.local:5432/cofrap"
+    secrets:
+      - encryption-key
+
+  authenticate:
+    lang: python3-http
+    handler: ./functions/authenticate
+    image: lyndaalga/cofrap-authenticate:latest
+    environment:
+      DATABASE_URL: "postgresql://cofrap:cofrap@postgres.cofrap.svc.cluster.local:5432/cofrap"
+    secrets:
+      - encryption-key
+
+  recover-with-backup-code:
+    lang: python3-http
+    handler: ./functions/recover-with-backup-code
+    image: lyndaalga/cofrap-recover-with-backup-code:latest
+    environment:
+      DATABASE_URL: "postgresql://cofrap:cofrap@postgres.cofrap.svc.cluster.local:5432/cofrap"
+    secrets:
+      - encryption-key

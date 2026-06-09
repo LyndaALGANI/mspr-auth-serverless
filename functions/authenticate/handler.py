@@ -88,9 +88,6 @@ def handle(event, context):
             decrypted_pw = None
             
         if decrypted_pw != password:
-            # Log failed attempt
-            cur.execute("INSERT INTO login_attempts (user_id, success) VALUES (%s, FALSE)", (user_id,))
-            conn.commit()
             return {
                 "statusCode": 401,
                 "headers": cors_headers,
@@ -107,7 +104,7 @@ def handle(event, context):
                 else:
                     gen_dt = datetime.combine(gendate, datetime.min.time())
                 days_old = (datetime.now() - gen_dt).days
-                if days_old > 90:
+                if days_old > 180:
                     is_expired = True
             except Exception:
                 pass
@@ -136,18 +133,12 @@ def handle(event, context):
             
         totp = pyotp.TOTP(mfa_secret)
         if not totp.verify(totp_code):
-            # Log failed attempt
-            cur.execute("INSERT INTO login_attempts (user_id, success) VALUES (%s, FALSE)", (user_id,))
-            conn.commit()
             return {
                 "statusCode": 401,
                 "headers": cors_headers,
                 "body": json.dumps({"error": "invalid_totp"})
             }
             
-        # Log successful attempt
-        cur.execute("INSERT INTO login_attempts (user_id, success) VALUES (%s, TRUE)", (user_id,))
-        conn.commit()
         
         return {
             "statusCode": 200,

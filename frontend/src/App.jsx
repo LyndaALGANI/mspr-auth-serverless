@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 
 const API_BASE = (import.meta.env.VITE_GATEWAY_URL || "").replace(/\/$/, "");
 
@@ -36,21 +36,19 @@ function NavigationTabs({ activeTab }) {
     <div className="flex bg-black/40 border border-white/[0.06] rounded-xl p-1 mb-6">
       <Link
         to="/register"
-        className={`flex-1 text-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${
-          activeTab === 'register'
+        className={`flex-1 text-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${activeTab === 'register'
             ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/20'
             : 'text-gray-400 hover:text-gray-200'
-        }`}
+          }`}
       >
         Inscription
       </Link>
       <Link
         to="/login"
-        className={`flex-1 text-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${
-          activeTab === 'login'
+        className={`flex-1 text-center py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${activeTab === 'login'
             ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/20'
             : 'text-gray-400 hover:text-gray-200'
-        }`}
+          }`}
       >
         Connexion
       </Link>
@@ -68,7 +66,7 @@ async function apiCall(endpoint, payload) {
       },
       body: JSON.stringify(payload)
     });
-    
+
     const data = await response.json();
     if (!response.ok) {
       return { error: data.error || `Erreur serveur (Status ${response.status})` };
@@ -89,10 +87,9 @@ function Register() {
   const [totpCode, setTotpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
-  
+
   const [pwQr, setPwQr] = useState("");
   const [totpQr, setTotpQr] = useState("");
-  const [backupCodes, setBackupCodes] = useState([]);
 
   const showMsg = (text, type = "error") => {
     setMessage({ text, type });
@@ -110,13 +107,13 @@ function Register() {
     if (!validateUsername(cleanUsername)) {
       return showMsg("L'identifiant doit comporter entre 8 et 20 caractères et ne contenir que des lettres, chiffres, _, - ou .");
     }
-    
+
     setLoading(true);
     showMsg("Création du compte...", "info");
-    
+
     const res = await apiCall("/function/generate-password", { username: cleanUsername });
     setLoading(false);
-    
+
     if (res.error) {
       if (res.error === "username_already_exists") {
         showMsg("Cet identifiant est déjà utilisé.", "error");
@@ -139,7 +136,7 @@ function Register() {
     if (cleanPw.length !== 24) {
       return showMsg("Le mot de passe doit comporter exactement 24 caractères.");
     }
-    
+
     setLoading(true);
     showMsg("Vérification et initialisation de la double authentification...", "info");
 
@@ -154,7 +151,6 @@ function Register() {
       }
     } else {
       setTotpQr(res.qr_code);
-      setBackupCodes(res.backup_codes || []);
       showMsg("Veuillez scanner le code TOTP avec votre application 2FA.", "success");
       setStep(3);
     }
@@ -322,13 +318,12 @@ function Register() {
 
       {message.text && (
         <div
-          className={`mt-4 p-3.5 rounded-xl text-xs font-medium border leading-relaxed ${
-            message.type === 'error'
+          className={`mt-4 p-3.5 rounded-xl text-xs font-medium border leading-relaxed ${message.type === 'error'
               ? 'bg-red-500/10 border-red-500/20 text-red-400'
               : message.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-brand-500/10 border-brand-500/20 text-brand-400'
-          }`}
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : 'bg-brand-500/10 border-brand-500/20 text-brand-400'
+            }`}
         >
           {message.text}
         </div>
@@ -346,7 +341,7 @@ function Login() {
   const [totpCode, setTotpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
-  const navigate = useNavigate();
+  const [expiredUsername, setExpiredUsername] = useState("");
 
   const validateUsername = (name) => {
     const regex = /^[a-zA-Z0-9_.-]{8,20}$/;
@@ -377,6 +372,7 @@ function Login() {
 
     setLoading(true);
     setMessage({ text: "Vérification des identifiants...", type: "info" });
+    setExpiredUsername("");
 
     const res = await apiCall("/function/authenticate", {
       username: cleanUsername,
@@ -387,16 +383,16 @@ function Login() {
 
     if (res.error) {
       if (res.expired) {
-        setMessage({ text: "Mot de passe expiré. Redirection vers le renouvellement...", type: "error" });
-        setTimeout(() => {
-          navigate(`/renew?username=${encodeURIComponent(cleanUsername)}`);
-        }, 2000);
+        setMessage({ text: "Votre mot de passe a expiré. Veuillez régénérer votre mot de passe.", type: "error" });
+        setExpiredUsername(cleanUsername);
       } else {
-        setMessage({ text: res.error === "invalid_credentials" 
-          ? "Identifiants incorrects." 
-          : res.error === "invalid_totp"
-          ? "Code 2FA invalide."
-          : res.error, type: "error" });
+        setMessage({
+          text: res.error === "invalid_credentials"
+            ? "Identifiants incorrects."
+            : res.error === "invalid_totp"
+              ? "Code 2FA invalide."
+              : res.error, type: "error"
+        });
       }
     } else {
       setMessage({ text: "✅ Authentification réussie ! Accès accordé.", type: "success" });
@@ -455,28 +451,26 @@ function Login() {
         >
           {loading ? "Connexion..." : "Se connecter"}
         </button>
-
-        <div className="flex justify-between items-center pt-2 text-xs">
-          <Link to="/recover" className="text-gray-400 hover:text-brand-400 transition-colors">
-            Mot de passe perdu ?
-          </Link>
-          <Link to="/renew" className="text-gray-400 hover:text-brand-400 transition-colors">
-            Renouveler identifiants
-          </Link>
-        </div>
       </form>
 
       {message.text && (
         <div
-          className={`mt-4 p-3.5 rounded-xl text-xs font-medium border leading-relaxed ${
-            message.type === 'error'
+          className={`mt-4 p-3.5 rounded-xl text-xs font-medium border leading-relaxed ${message.type === 'error'
               ? 'bg-red-500/10 border-red-500/20 text-red-400'
               : message.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-brand-500/10 border-brand-500/20 text-brand-400'
-          }`}
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : 'bg-brand-500/10 border-brand-500/20 text-brand-400'
+            }`}
         >
           {message.text}
+          {expiredUsername && (
+            <Link
+              to={`/renew?username=${encodeURIComponent(expiredUsername)}`}
+              className="block mt-3 text-center py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-all"
+            >
+              Régénérer mon mot de passe
+            </Link>
+          )}
         </div>
       )}
     </div>
@@ -487,12 +481,14 @@ function Login() {
 // PAGE : RENOUVELLEMENT (/renew)
 // ===================================
 function Renew() {
+  const [step, setStep] = useState(1);
   const [username, setUsername] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [totpCode, setTotpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [pwQr, setPwQr] = useState("");
   const [totpQr, setTotpQr] = useState("");
-  const [backupCodes, setBackupCodes] = useState([]);
   const location = useLocation();
 
   // Pre-fill username from redirect
@@ -502,33 +498,99 @@ function Renew() {
     if (user) setUsername(user);
   }, [location]);
 
-  const handleRenew = async (e) => {
+  const showMsg = (text, type = "error") => {
+    setMessage({ text, type });
+  };
+
+  const validateUsername = (name) => {
+    const regex = /^[a-zA-Z0-9_.-]{8,20}$/;
+    return regex.test(name);
+  };
+
+  const handleStep1 = async (e) => {
     e.preventDefault();
-    if (!username.trim()) return setMessage({ text: "Veuillez entrer un nom d'utilisateur", type: "error" });
+    const cleanUsername = username.trim();
+    if (!cleanUsername) return showMsg("Veuillez saisir un nom d'utilisateur");
+    if (!validateUsername(cleanUsername)) {
+      return showMsg("L'identifiant doit comporter entre 8 et 20 caractères et ne contenir que des lettres, chiffres, _, - ou .");
+    }
 
     setLoading(true);
-    setMessage({ text: "Génération du nouveau mot de passe...", type: "info" });
+    showMsg("Vérification de l'utilisateur et génération du mot de passe...", "info");
 
-    // 1. Generate new password
-    const pwRes = await apiCall("/function/generate-password", { username: username.trim() });
-    if (pwRes.error) {
-      setLoading(false);
-      return setMessage({ text: pwRes.error, type: "error" });
-    }
-
-    // 2. Generate new 2FA
-    setMessage({ text: "Génération de la nouvelle clé 2FA...", type: "info" });
-    const totpRes = await apiCall("/function/generate-2fa", { username: username.trim() });
+    const res = await apiCall("/function/generate-password", { username: cleanUsername, renew: true });
     setLoading(false);
 
-    if (totpRes.error) {
-      return setMessage({ text: totpRes.error, type: "error" });
+    if (res.error) {
+      if (res.error === "user_not_found") {
+        showMsg("Cet identifiant n'existe pas.", "error");
+      } else if (res.error === "invalid_username_format") {
+        showMsg("Format d'identifiant invalide.", "error");
+      } else {
+        showMsg(res.error, "error");
+      }
+    } else {
+      setPwQr(res.qr_code);
+      showMsg("Nouveau mot de passe généré. Scannez le code ci-dessous pour le récupérer.", "success");
+      setStep(2);
+    }
+  };
+
+  const handleStep2 = async (e) => {
+    e.preventDefault();
+    const cleanPw = passwordInput.trim();
+    if (!cleanPw) return showMsg("Veuillez coller le nouveau mot de passe");
+    if (cleanPw.length !== 24) {
+      return showMsg("Le mot de passe doit comporter exactement 24 caractères.");
     }
 
-    setPwQr(pwRes.qr_code);
-    setTotpQr(totpRes.qr_code);
-    setBackupCodes(totpRes.backup_codes || []);
-    setMessage({ text: "✅ Vos identifiants ont été renouvelés avec succès !", type: "success" });
+    setLoading(true);
+    showMsg("Génération de la nouvelle clé double authentification...", "info");
+
+    const res = await apiCall("/function/generate-2fa", { username: username.trim(), password: cleanPw });
+    setLoading(false);
+
+    if (res.error) {
+      if (res.error === "invalid_password") {
+        showMsg("Mot de passe incorrect. Veuillez vérifier et réessayer.", "error");
+      } else {
+        showMsg(res.error, "error");
+      }
+    } else {
+      setTotpQr(res.qr_code);
+      showMsg("Nouveau TOTP généré. Veuillez scanner le code avec votre application 2FA.", "success");
+      setStep(3);
+    }
+  };
+
+  const handleStep3 = async (e) => {
+    e.preventDefault();
+    const cleanTotp = totpCode.trim();
+    if (!cleanTotp) return showMsg("Veuillez saisir le code 2FA");
+    if (cleanTotp.length !== 6 || isNaN(cleanTotp)) {
+      return showMsg("Le code 2FA doit être un nombre de 6 chiffres.");
+    }
+
+    setLoading(true);
+    showMsg("Validation de la connexion avec les nouvelles clés...", "info");
+
+    const res = await apiCall("/function/authenticate", {
+      username: username.trim(),
+      password: passwordInput.trim(),
+      totp_code: cleanTotp
+    });
+    setLoading(false);
+
+    if (res.error) {
+      if (res.error === "invalid_totp") {
+        showMsg("Code 2FA invalide. Veuillez réessayer.", "error");
+      } else {
+        showMsg(res.error, "error");
+      }
+    } else {
+      showMsg("Mot de passe et Double Authentification renouvelés avec succès !", "success");
+      setStep(4);
+    }
   };
 
   return (
@@ -540,10 +602,17 @@ function Renew() {
         </Link>
       </div>
 
-      {!pwQr ? (
-        <form onSubmit={handleRenew} className="space-y-5">
+      {step === 1 && (
+        <form onSubmit={handleStep1} className="space-y-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-brand-400 bg-brand-600/10 border border-brand-500/20 px-2 py-0.5 rounded-full">
+              Étape 1 / 3
+            </span>
+            <span className="text-xs text-gray-400">Vérifier l'utilisateur</span>
+          </div>
+
           <p className="text-xs text-gray-400 leading-relaxed">
-            Votre mot de passe a expiré ou vous devez le modifier. Saisissez votre identifiant pour générer de nouveaux codes.
+            Votre mot de passe a expiré ou vous devez le modifier. Saisissez votre identifiant pour démarrer la procédure de renouvellement.
           </p>
 
           <div>
@@ -564,121 +633,42 @@ function Renew() {
             disabled={loading}
             className="w-full py-3 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-sm font-semibold rounded-xl transition-all shadow-lg shadow-brand-600/20"
           >
-            {loading ? "Renouvellement..." : "Générer nouveaux identifiants"}
+            {loading ? "Vérification..." : "Générer nouveau mot de passe"}
           </button>
         </form>
-      ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col items-center p-3 bg-white rounded-xl">
-              <span className="text-[9px] uppercase font-bold text-gray-600 mb-1">Nouveau Password</span>
-              <img src={`data:image/png;base64,${pwQr}`} alt="New Password QR" className="w-28 h-28 object-contain" />
-            </div>
-            <div className="flex flex-col items-center p-3 bg-white rounded-xl">
-              <span className="text-[9px] uppercase font-bold text-gray-600 mb-1">Nouveau 2FA</span>
-              <img src={`data:image/png;base64,${totpQr}`} alt="New TOTP QR" className="w-28 h-28 object-contain" />
-            </div>
+      )}
+
+      {step === 2 && (
+        <form onSubmit={handleStep2} className="space-y-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-brand-400 bg-brand-600/10 border border-brand-500/20 px-2 py-0.5 rounded-full">
+              Étape 2 / 3
+            </span>
+            <span className="text-xs text-gray-400">Nouveau mot de passe</span>
           </div>
 
-
-
-          <Link
-            to="/login"
-            className="block w-full py-3 text-center bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold rounded-xl transition-all shadow-lg shadow-emerald-600/20"
-          >
-            Se connecter avec les nouveaux codes
-          </Link>
-        </div>
-      )}
-
-      {message.text && (
-        <div
-          className={`mt-4 p-3.5 rounded-xl text-xs font-medium border leading-relaxed ${
-            message.type === 'error'
-              ? 'bg-red-500/10 border-red-500/20 text-red-400'
-              : message.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-brand-500/10 border-brand-500/20 text-brand-400'
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ===================================
-// PAGE : CODE DE SECOURS (/recover)
-// ===================================
-function Recover() {
-  const [username, setUsername] = useState("");
-  const [backupCode, setBackupCode] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ text: "", type: "" });
-  const [pwQr, setPwQr] = useState("");
-
-  const handleRecover = async (e) => {
-    e.preventDefault();
-    if (!username.trim() || !backupCode.trim()) {
-      return setMessage({ text: "Veuillez remplir tous les champs", type: "error" });
-    }
-
-    setLoading(true);
-    setMessage({ text: "Validation du code de secours...", type: "info" });
-
-    const res = await apiCall("/function/recover-with-backup-code", {
-      username: username.trim(),
-      backup_code: backupCode.trim()
-    });
-    setLoading(false);
-
-    if (res.error) {
-      setMessage({ text: res.error === "invalid_backup_code" ? "Code de secours invalide ou déjà utilisé." : res.error, type: "error" });
-    } else {
-      setPwQr(res.qr_code);
-      setMessage({ text: "✅ Code validé ! Scannez le QR ci-dessous pour votre nouveau mot de passe.", type: "success" });
-    }
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4 border-b border-white/[0.06] pb-3">
-        <h2 className="font-title text-lg font-semibold text-gray-200">Récupération</h2>
-        <Link to="/login" className="text-xs text-brand-400 hover:text-brand-300">
-          Retour login
-        </Link>
-      </div>
-
-      {!pwQr ? (
-        <form onSubmit={handleRecover} className="space-y-5">
           <p className="text-xs text-gray-400 leading-relaxed">
-            Utilisez l'un des 5 codes de secours générés lors de votre inscription pour réinitialiser votre mot de passe.
+            Scannez le code QR ci-dessous pour récupérer votre nouveau mot de passe de 24 caractères, puis collez-le pour passer à la suite.
           </p>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
-              Nom d'utilisateur
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="ex: jean.dupont"
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600 outline-none transition-all"
+          <div className="flex flex-col items-center p-4 bg-white rounded-xl shadow-inner border border-white/10">
+            <img
+              src={`data:image/png;base64,${pwQr}`}
+              alt="QR Password"
+              className="w-40 h-40 object-contain"
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
-              Code de secours
+              Nouveau mot de passe (scanné)
             </label>
             <input
-              type="text"
-              value={backupCode}
-              onChange={(e) => setBackupCode(e.target.value)}
-              placeholder="Saisissez votre code à 8 caractères"
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600 outline-none transition-all font-mono"
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Saisissez ou collez le mot de passe"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600 outline-none transition-all"
             />
           </div>
 
@@ -687,34 +677,78 @@ function Recover() {
             disabled={loading}
             className="w-full py-3 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-sm font-semibold rounded-xl transition-all shadow-lg shadow-brand-600/20"
           >
-            {loading ? "Vérification..." : "Valider le code de secours"}
+            {loading ? "Chargement..." : "Continuer"}
           </button>
         </form>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex flex-col items-center p-4 bg-white rounded-xl">
-            <span className="text-xs font-bold text-gray-700 mb-2">Nouveau Mot de Passe (QR)</span>
-            <img src={`data:image/png;base64,${pwQr}`} alt="New Password QR" className="w-40 h-40 object-contain" />
+      )}
+
+      {step === 3 && (
+        <form onSubmit={handleStep3} className="space-y-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-brand-400 bg-brand-600/10 border border-brand-500/20 px-2 py-0.5 rounded-full">
+              Étape 3 / 3
+            </span>
+            <span className="text-xs text-gray-400">Nouveau double facteur (2FA)</span>
           </div>
 
+          <p className="text-xs text-gray-400 leading-relaxed">
+            Scannez le code QR ci-dessous avec votre application d'authentification (Google Authenticator, etc.) puis saisissez le code à 6 chiffres.
+          </p>
+
+          <div className="flex flex-col items-center p-4 bg-white rounded-xl shadow-inner border border-white/10">
+            <img
+              src={`data:image/png;base64,${totpQr}`}
+              alt="QR TOTP"
+              className="w-40 h-40 object-contain"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+              Code de sécurité 2FA
+            </label>
+            <input
+              type="text"
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value)}
+              placeholder="ex: 123456"
+              maxLength={6}
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600 outline-none transition-all text-center font-mono tracking-widest text-lg"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-sm font-semibold rounded-xl transition-all shadow-lg shadow-brand-600/20"
+          >
+            {loading ? "Validation..." : "Valider et enregistrer"}
+          </button>
+        </form>
+      )}
+
+      {step === 4 && (
+        <div className="space-y-6">
+          <p className="text-sm text-emerald-400 text-center font-medium">
+            Vos identifiants ont été mis à jour avec succès. Vous pouvez maintenant vous connecter.
+          </p>
           <Link
             to="/login"
             className="block w-full py-3 text-center bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold rounded-xl transition-all shadow-lg shadow-emerald-600/20"
           >
-            Se connecter
+            Se connecter maintenant
           </Link>
         </div>
       )}
 
-      {message.text && (
+      {message.text && step !== 4 && (
         <div
-          className={`mt-4 p-3.5 rounded-xl text-xs font-medium border leading-relaxed ${
-            message.type === 'error'
+          className={`mt-4 p-3.5 rounded-xl text-xs font-medium border leading-relaxed ${message.type === 'error'
               ? 'bg-red-500/10 border-red-500/20 text-red-400'
               : message.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-brand-500/10 border-brand-500/20 text-brand-400'
-          }`}
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : 'bg-brand-500/10 border-brand-500/20 text-brand-400'
+            }`}
         >
           {message.text}
         </div>
@@ -735,7 +769,6 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/renew" element={<Renew />} />
-          <Route path="/recover" element={<Recover />} />
           <Route path="*" element={<Login />} />
         </Routes>
       </Layout>

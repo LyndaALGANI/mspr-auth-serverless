@@ -89,18 +89,33 @@ def handle(event, context):
         user_row = cur.fetchone()
         
         today = datetime.now().strftime("%Y-%m-%d")
+        renew = body.get("renew", False)
         
         if user_row:
-            return {
-                "statusCode": 400,
-                "headers": cors_headers,
-                "body": json.dumps({"error": "username_already_exists"})
-            }
-        
-        cur.execute(
-            "INSERT INTO users (username, password, mfa, gendate, expired) VALUES (%s, %s, %s, %s, %s)",
-            (username, encrypted_pw, "", today, 0)
-        )
+            if not renew:
+                return {
+                    "statusCode": 400,
+                    "headers": cors_headers,
+                    "body": json.dumps({"error": "username_already_exists"})
+                }
+            else:
+                # Update existing user's password and reset MFA and expired state
+                cur.execute(
+                    "UPDATE users SET password = %s, mfa = %s, gendate = %s, expired = %s WHERE username = %s",
+                    (encrypted_pw, "", today, 0, username)
+                )
+        else:
+            if renew:
+                return {
+                    "statusCode": 404,
+                    "headers": cors_headers,
+                    "body": json.dumps({"error": "user_not_found"})
+                }
+            else:
+                cur.execute(
+                    "INSERT INTO users (username, password, mfa, gendate, expired) VALUES (%s, %s, %s, %s, %s)",
+                    (username, encrypted_pw, "", today, 0)
+                )
         conn.commit()
     except Exception as e:
         if conn:

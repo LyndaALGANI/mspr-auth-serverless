@@ -31,12 +31,3 @@ functions:
       DATABASE_URL: "postgresql://cofrap:cofrap@postgres.cofrap.svc.cluster.local:5432/cofrap"
     secrets:
       - encryption-key
-
-  recover-with-backup-code:
-    lang: python3-http
-    handler: ./functions/recover-with-backup-code
-    image: lyndaalga/cofrap-recover-with-backup-code:latest
-    environment:
-      DATABASE_URL: "postgresql://cofrap:cofrap@postgres.cofrap.svc.cluster.local:5432/cofrap"
-    secrets:
-      - encryption-key

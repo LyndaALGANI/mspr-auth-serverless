@@ -1,7 +1,5 @@
 import json
 import os
-import random
-import string
 import io
 import base64
 import psycopg2
@@ -98,21 +96,6 @@ def handle(event, context):
         totp_secret = pyotp.random_base32()
         totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=username, issuer_name="COFRAP")
 
-        # Generate Backup Codes
-        chars = string.ascii_uppercase + string.digits
-        raw_backup_codes = ["".join(random.choice(chars) for _ in range(8)) for _ in range(5)]
-
-        # Encrypt backup codes and save to DB
-        cipher = get_cipher()
-        encrypted_backup_codes = [cipher.encrypt(code.encode()).decode() for code in raw_backup_codes]
-
-        # Remove old backup codes
-        cur.execute("DELETE FROM backup_codes WHERE user_id = %s", (user_id,))
-
-        # Save new backup codes
-        for enc_code in encrypted_backup_codes:
-            cur.execute("INSERT INTO backup_codes (user_id, code, used) VALUES (%s, %s, FALSE)", (user_id, enc_code))
-
         # Update user's TOTP secret in DB
         cur.execute("UPDATE users SET mfa = %s WHERE id = %s", (totp_secret, user_id))
         
@@ -143,7 +126,6 @@ def handle(event, context):
         "statusCode": 200,
         "headers": cors_headers,
         "body": json.dumps({
-            "qr_code": qr_base64,
-            "backup_codes": raw_backup_codes
+            "qr_code": qr_base64
         })
     }

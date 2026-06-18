@@ -10,7 +10,7 @@
 | :--- | :--- |
 | **Projet** | COFRAP — Authentification Sécurisée (MSPR Bloc 2) |
 | **Équipe** | Hichem · Jalal · Lynda |
-| **Dépôt GitHub** | [github.com/yoyo5053/mspr-cofrap](https://github.com/LyndaALGANI/mspr-auth-serverless.git) (branche `develop` / `main`) |
+| **Dépôt GitHub** | (https://github.com/LyndaALGANI/mspr-auth-serverless.git) (branche `develop` / `main`) |
 | **OS Cible** | Ubuntu / Debian (serveur Linux) |
 | **Infrastructure** | K3S Single-Node (control-plane + worker sur 1 VM) |
 | **Backend** | 3 fonctions OpenFaaS Python (`python3-http`) |

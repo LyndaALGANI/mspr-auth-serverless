@@ -10,7 +10,7 @@
 | :--- | :--- |
 | **Projet** | COFRAP — Authentification Sécurisée (MSPR Bloc 2) |
 | **Équipe** | Hichem · Jalal · Lynda |
-| **Dépôt GitHub** | (https://github.com/LyndaALGANI/mspr-auth-serverless.git) (branche `develop` / `main`) |
+| **Dépôt GitHub** | [github.com/LyndaALGANI/mspr-auth-serverless](https://github.com/LyndaALGANI/mspr-auth-serverless.git) (branche `develop` / `main`) |
 | **OS Cible** | Ubuntu / Debian (serveur Linux) |
 | **Infrastructure** | K3S Single-Node (control-plane + worker sur 1 VM) |
 | **Backend** | 3 fonctions OpenFaaS Python (`python3-http`) |
@@ -617,7 +617,8 @@ Complétez ce tableau avec les valeurs réelles de votre déploiement pour la so
 | **GATEWAY_URL** | `http://IP_VM:NODE_PORT` |
 | **NODE_PORT OpenFaaS** | *À compléter* (via `kubectl -n openfaas get svc gateway-external`) |
 | **Mot de passe OpenFaaS admin** | *À noter et conserver précieusement* |
-| **Clé Fernet (ENCRYPTION_KEY)** | `Rt9LIv0sl8hVk_UjrxDB2QoACvrPoJmVVxuM5OdM5_o=` (Exemple) |
+| **Clé Fernet (ENCRYPTION_KEY)** | `YOUR_FERNET_KEY_HERE` (Exemple) |
 | **Identifiant Docker Hub** | *À compléter* |
 | **URL Frontend de Production** | `http://IP_VM:8080` |
-| **DATABASE_URL Interne** | `postgresql://cofrap:cofrap@postgres.cofrap.svc.cluster.local:5432/cofrap` |
+| **DATABASE_URL Interne** | `postgresql://cofrap:password@postgres.cofrap.svc.cluster.local:5432/cofrap` |
+

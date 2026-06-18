@@ -69,7 +69,7 @@ async function apiCall(endpoint, payload) {
 
     const data = await response.json();
     if (!response.ok) {
-      return { error: data.error || `Erreur serveur (Status ${response.status})` };
+      return { ...data, error: data.error || `Erreur serveur (Status ${response.status})` };
     }
     return data;
   } catch (err) {
@@ -382,7 +382,7 @@ function Login() {
     setLoading(false);
 
     if (res.error) {
-      if (res.expired) {
+      if (res.expired || res.error === "expired_password") {
         setMessage({ text: "Votre mot de passe a expiré. Veuillez régénérer votre mot de passe.", type: "error" });
         setExpiredUsername(cleanUsername);
       } else {
